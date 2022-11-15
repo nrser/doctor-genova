@@ -7,7 +7,7 @@ from pydoc_markdown.util.docspec import ApiSuite
 from pydoc_markdown.interfaces import Processor, Resolver, ResolverV2
 import docspec
 
-from splatlog._docs.stdlib_resolver import StdlibResolver
+from .stdlib_resolver import StdlibResolver
 
 _LOG = logging.getLogger(__name__)
 
