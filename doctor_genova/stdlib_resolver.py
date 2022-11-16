@@ -136,7 +136,7 @@ class StdlibResolver:
     def get_spec(name: str) -> Optional[ModuleSpec]:
         try:
             return find_spec(name)
-        except ModuleNotFoundError:
+        except (ModuleNotFoundError, ImportError):
             return None
 
     @staticmethod

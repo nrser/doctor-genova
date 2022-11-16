@@ -1,7 +1,11 @@
+"""Functions for working with the 'nav' structure in a Mkdocs config.
+"""
+
 from pathlib import Path
+from typing import Any
 
 
-def get_child_nav(nav, name):
+def get_child_nav(nav: list[Any], name: str):
     for entry in nav:
         if isinstance(entry, dict) and name in entry:
             return entry[name]
@@ -9,7 +13,8 @@ def get_child_nav(nav, name):
 
 
 def ensure_child_nav(nav, name):
-    if child_nav := get_child_nav(nav, name):
+    child_nav = get_child_nav(nav, name)
+    if child_nav is not None:
         return child_nav
     child_nav = []
     nav.append({name: child_nav})

@@ -4,18 +4,18 @@ from pathlib import Path
 import logging
 import sys
 from typing import IO, Optional
-from splatlog._docs.nav import dig_nav
+
+from .nav import dig_nav
 
 import yaml
-
-REPO_ROOT = Path(__file__).parents[2]
-PKG_ROOT = REPO_ROOT / "splatlog"
 
 _LOG = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
 class APIPage:
+    """Handles the dirty-work of generating an API page stub."""
+
     @classmethod
     def logger(cls) -> logging.Logger:
         return _LOG.getChild(cls.__qualname__)
@@ -103,7 +103,10 @@ class APIPage:
 
         return True
 
-    def add_to_api_nav(self, api_nav: list) -> None:
+    def add_to_api_nav(self, api_nav: Optional[list]) -> None:
+        if api_nav is None:
+            return
+
         parent_nav = dig_nav(api_nav, self.rel_path.parent.parts)
 
         if self.nav_title:

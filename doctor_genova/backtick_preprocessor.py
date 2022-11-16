@@ -50,6 +50,7 @@ class BacktickPreprocessor(PydocTagPreprocessor):
     """
 
     _stdlib_resolver: StdlibResolver
+    _resolution_suite: Optional[ApiSuite] = None
 
     def __post_init__(self) -> None:
         super().__post_init__()
@@ -78,7 +79,7 @@ class BacktickPreprocessor(PydocTagPreprocessor):
         #       There is a better way to do this for sure, but for now we simply
         #       overwrite the suite with a new, complete one.
         #
-        self._suite = ApiSuite(list(self._loader.load()))
+        self._resolution_suite = ApiSuite(list(self._loader.load()))
 
         for file in files:
             self._replace_backticks(file)
@@ -90,7 +91,7 @@ class BacktickPreprocessor(PydocTagPreprocessor):
         )
 
     def _resolve_fqn(self, fqn: str) -> Optional[ApiObject]:
-        objects = self._suite.resolve_fqn(fqn)
+        objects = self._resolution_suite.resolve_fqn(fqn)
 
         count = len(objects)
 
