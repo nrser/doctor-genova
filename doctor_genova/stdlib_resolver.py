@@ -1,12 +1,15 @@
 from dataclasses import dataclass
 from functools import cached_property
 from inspect import getmembers, isclass
+import logging
 import sys
 from importlib.machinery import ModuleSpec
 from importlib.util import find_spec, module_from_spec
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Iterable, Optional, Sequence, Union
+
+_LOG = logging.getLogger(__name__)
 
 
 class StdlibResolver:
@@ -212,6 +215,9 @@ class StdlibResolver:
         )
 
     def is_stdlib_spec(self, spec: ModuleSpec) -> bool:
+        if spec.origin is None:
+            return False
+
         if spec.origin == "built-in":
             return True
 

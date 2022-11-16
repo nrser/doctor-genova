@@ -35,11 +35,11 @@ We are in a **_docs file_** (`docs/content/**/*.md`) here, specifically
 
 ### Hash Prefix ###
 
-| Status |   Type   |                            Source                             |   Render   |
-| ------ | -------- | ------------------------------------------------------------- | ---------- |
-| 🔴¹     | FQN      | &#35;doctor_genova.backtick_preprocessor.BacktickPreprocessor | (omitted)² |
-| 🔴¹     | Stdlib   | &#35;typing.IO                                                | (omitted)² |
-| 🔴¹     | Indirect | &#35;doctor_genova.BacktickPreprocessor                       | (omitted)² |
+| Status |   Type   |                      Source                       |   Render   |
+| ------ | -------- | ------------------------------------------------- | ---------- |
+| 🔴¹     | FQN      | &#35;doctor_genova.preprocessor.DrGenPreprocessor | (omitted)² |
+| 🔴¹     | Stdlib   | &#35;typing.IO                                    | (omitted)² |
+| 🔴¹     | Indirect | &#35;doctor_genova.DrGenPreprocessor              | (omitted)² |
 
 > ¹ Does not seem that Hash Prefix links are indended to be supported in
 > Markdown files.
@@ -49,21 +49,21 @@ We are in a **_docs file_** (`docs/content/**/*.md`) here, specifically
 
 ### `@pylink` Tag ###
 
-| Status |   Type   |                                 Source                                  |                               Render                               |
-| ------ | -------- | ----------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| 🟢      | FQN      | &#123;@pylink doctor_genova.backtick_preprocessor.BacktickPreprocessor} | {@pylink doctor_genova.backtick_preprocessor.BacktickPreprocessor} |
-| 🟢      | Stdlib   | &#123;@pylink typing.IO}                                                | {@pylink typing.IO}                                                |
-| 🟠³     | Indirect | &#123;@pylink doctor_genova.BacktickPreprocessor}                       | {@pylink doctor_genova.BacktickPreprocessor}                       |
+| Status |   Type   |                           Source                            |                         Render                         |
+| ------ | -------- | ----------------------------------------------------------- | ------------------------------------------------------ |
+| 🟢      | FQN      | &#123;@pylink doctor_genova.preprocessor.DrGenPreprocessor} | {@pylink doctor_genova.preprocessor.DrGenPreprocessor} |
+| 🟢      | Stdlib   | &#123;@pylink typing.IO}                                    | {@pylink typing.IO}                                    |
+| 🟠³     | Indirect | &#123;@pylink doctor_genova.DrGenPreprocessor}              | {@pylink doctor_genova.DrGenPreprocessor}              |
 
 > ³ Fails on initial render, then succeeds on dynamic re-render (sometimes?).
 
 ### Backtick Span ###
 
-| Status |   Type   |                               Source                               |                           Render                           |
-| ------ | -------- | ------------------------------------------------------------------ | ---------------------------------------------------------- |
-| 🟡⁴     | FQN      | &#96;doctor_genova.backtick_preprocessor.BacktickPreprocessor&#96; | `doctor_genova.backtick_preprocessor.BacktickPreprocessor` |
-| 🟢      | Stdlib   | &#96;typing.IO&#96;                                                | `typing.IO`                                                |
-| 🟡⁴     | Indirect | &#96;doctor_genova.BacktickPreprocessor&#96;                       | `doctor_genova.BacktickPreprocessor`                       |
+| Status |   Type   |                         Source                         |                     Render                     |
+| ------ | -------- | ------------------------------------------------------ | ---------------------------------------------- |
+| 🟡⁴     | FQN      | &#96;doctor_genova.preprocessor.DrGenPreprocessor&#96; | `doctor_genova.preprocessor.DrGenPreprocessor` |
+| 🟢      | Stdlib   | &#96;typing.IO&#96;                                    | `typing.IO`                                    |
+| 🟡⁴     | Indirect | &#96;doctor_genova.DrGenPreprocessor&#96;              | `doctor_genova.DrGenPreprocessor`              |
 
 > ⁴ Succeeds on initial render, then fails on dynamic re-render.
 

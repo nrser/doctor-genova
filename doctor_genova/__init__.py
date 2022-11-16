@@ -10,9 +10,10 @@ import yaml
 
 from doctor_genova.api_page import APIPage
 from doctor_genova.nav import ensure_child_nav, sort_nav
+from doctor_genova.lib import get_default_search_path
 
 # Unused explicit imports that allow indirect linking.
-from doctor_genova.backtick_preprocessor import BacktickPreprocessor
+from doctor_genova.preprocessor import DrGenPreprocessor
 
 
 _LOG = logging.getLogger(__name__)
@@ -154,42 +155,6 @@ def mkdocs_api_nav(
     yaml.safe_dump(mkdocs_config, mkdocs_yml_path.open("w", encoding="utf-8"))
 
     _LOG.info("Updated mkdocs config\n\n%s", yaml.safe_dump(mkdocs_config))
-
-
-def get_default_search_path() -> list[str]:
-    """Get the default list of paths to search for Python packages and modules.
-
-    This behavior is coppied from
-
-    [pydoc_markdown.novella.preprocessor.PydocTagPreprocessor](https://github.com/NiklasRosenstein/pydoc-markdown/blob/42fa47f91debba4ff7051ff58140fff8383245ac/src/pydoc_markdown/novella/preprocessor.py#L58)
-
-    so that we find the same packages and modules by default.
-
-    Basically:
-
-    1.  If the current directory is named 'docs' or 'documentation', then
-        the search path is
-
-        ```python
-        ["../src", ".."]
-        ```
-
-        (look in `src` in the parent directory, and the parent directory itself).
-
-    2.  Otherwise it's
-
-        ```python
-        ["src", "."]
-        ```
-
-        (look in the `src` directory and this directory itself).
-
-    """
-
-    if Path.cwd().name.lower() in ("docs", "documentation"):
-        return ["../src", ".."]
-    else:
-        return ["src", "."]
 
 
 def iter_py_files(

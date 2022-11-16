@@ -1,5 +1,5 @@
 import os
-from doctor_genova import generate_api_pages, BacktickPreprocessor
+from doctor_genova import generate_api_pages, DrGenPreprocessor
 
 template "mkdocs"
 
@@ -10,7 +10,7 @@ action "mkdocs-update-config" {
 }
 
 action "preprocess-markdown" {
-  use BacktickPreprocessor(self, "backtick")
+  use DrGenPreprocessor(self, "doctor-genova")
 }
 
 do

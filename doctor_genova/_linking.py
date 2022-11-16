@@ -10,38 +10,37 @@ We are in a **_source file_** (`splatlog/**/*.py`) docstring here; in particular
 
 ##### Hash Prefix #####
 
-| Status |   Type   |                          Render                           |
-| ------ | -------- | --------------------------------------------------------- |
-| 🟡¹     | Local    | #BacktickPreprocessor                                     |
-| 🟡¹     | FQN      | #doctor_genova.backtick_preprocessor.BacktickPreprocessor |
-| 🟢      | Stdlib   | #typing.IO                                                |
-| 🟡¹     | Indirect | #doctor_genova.BacktickPreprocessor                       |
+| Status |   Type   |                    Render                     |
+| ------ | -------- | --------------------------------------------- |
+| 🟡¹     | Local    | #DrGenPreprocessor                         |
+| 🟡¹     | FQN      | #doctor_genova.preprocessor.DrGenPreprocessor |
+| 🟢      | Stdlib   | #typing.IO                                    |
+| 🟡¹     | Indirect | #doctor_genova.DrGenPreprocessor           |
 
 > ¹ Succeeds on initial render, then fails on dynamic re-render.
 
 ##### `@pylink` Tag #####
 
-| Status |   Type   |                               Render                               |
-| ------ | -------- | ------------------------------------------------------------------ |
-| 🔴²     | Local    | {@pylink BacktickPreprocessor}                                     |
-| 🟡³     | FQN      | {@pylink doctor_genova.backtick_preprocessor.BacktickPreprocessor} |
-| 🟢      | Stdlib   | {@pylink typing.IO}                                                |
-| 🔴      | Indirect | {@pylink doctor_genova.BacktickPreprocessor}                       |
+| Status |   Type   |                         Render                         |
+| ------ | -------- | ------------------------------------------------------ |
+| 🟡²     | Local    | {@pylink DrGenPreprocessor}                            |
+| 🟡²     | FQN      | {@pylink doctor_genova.preprocessor.DrGenPreprocessor} |
+| 🟢      | Stdlib   | {@pylink typing.IO}                                    |
+| 🟡²     | Indirect | {@pylink doctor_genova.DrGenPreprocessor}              |
 
-> ² Doesn't work because the source processor (which has access to the source
-> node for contextual resolution) doesn't process `@pylink` tags.
-
-> ³ Succeeds on initial render, then fails on dynamic re-render.
+> ² Succeeds on initial render, then fails on dynamic re-render.
 
 ##### Backtick Span #####
 
-| Status |   Type   |                           Render                           |
-| ------ | -------- | ---------------------------------------------------------- |
-| 🟡⁴     | Local    | `BacktickPreprocessor`                                     |
-| 🟡⁴     | FQN      | `doctor_genova.backtick_preprocessor.BacktickPreprocessor` |
-| 🟢      | Stdlib   | `typing.IO`                                                |
-| 🟡⁴     | Indirect | `doctor_genova.BacktickPreprocessor`                       |
+| Status |   Type   |                     Render                     |
+| ------ | -------- | ---------------------------------------------- |
+| 🟡³     | Local    | `DrGenPreprocessor`                         |
+| 🟡³     | FQN      | `doctor_genova.preprocessor.DrGenPreprocessor` |
+| 🟢      | Stdlib   | `typing.IO`                                    |
+| 🟡³     | Indirect | `doctor_genova.DrGenPreprocessor`           |
 
-> ⁴ Succeeds on initial render, then fails on dynamic re-render.
+> ³ Succeeds on initial render, then fails on dynamic re-render.
 
 """
+
+from doctor_genova.preprocessor import DrGenPreprocessor
