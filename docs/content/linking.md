@@ -17,8 +17,14 @@ Dr. Genova augments the auto-linking capabilities of [pydoc-markdown][] and
 > 📝 NOTE
 > 
 > Much things break after auto-update refresh when running `novella` in
-> `--serve` mode, noted with the yellow dot 🟡 below. Has not really been looked
-> into yet.
+> `--serve` mode, noted with the yellow dot 🟡 below.
+> 
+> Looks like the problem is in 
+> 
+> [novella.markdown.tags.anchor.AnchorTagProcessor](https://github.com/NiklasRosenstein/novella/blob/6d80d06e6688306aa7628385cdeae103a7cf62f3/src/novella/markdown/tags/anchor.py#L57)
+> 
+> Right now, it clears the map of anchors on re-run, but those anchors are not
+> recreated, so it can't find them.
 
 Documentation File (Markdown) Linking Tests
 ------------------------------------------------------------------------------

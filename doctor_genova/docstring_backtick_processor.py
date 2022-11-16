@@ -8,12 +8,7 @@ from doctor_genova.lib import replace_inline_tags_in
 from pydoc_markdown.util.docspec import ApiSuite
 from pydoc_markdown.interfaces import Processor, Resolver, ResolverV2
 from docspec import ApiObject, Module, visit
-from novella.markdown.tagparser import (
-    Tag,
-    parse_block_tags,
-    parse_inline_tags,
-    replace_tags,
-)
+from novella.markdown.tagparser import Tag
 
 from .stdlib_resolver import StdlibResolver
 
@@ -47,7 +42,9 @@ class DocstringBacktickProcessor(Processor):
             return
 
         node.docstring.content = self.BACKTICK_RE.sub(
-            lambda match: self._replace_match(node, suite, resolver, match),
+            lambda match: self._replace_backtick_match(
+                node, suite, resolver, match
+            ),
             node.docstring.content,
         )
 
@@ -70,7 +67,7 @@ class DocstringBacktickProcessor(Processor):
             )
 
             _LOG.info(
-                "  <fg=green>NODE TAG</fg> <fg=cyan>%s</fg> -> <fg=green>%s</fg>",
+                "  <fg=green>TAG</fg> <fg=cyan>%s</fg> -> <fg=green>%s</fg>",
                 name,
                 link,
             )
@@ -82,7 +79,7 @@ class DocstringBacktickProcessor(Processor):
 
         return None
 
-    def _replace_match(
+    def _replace_backtick_match(
         self,
         node: ApiObject,
         suite: ApiSuite,
@@ -91,6 +88,13 @@ class DocstringBacktickProcessor(Processor):
     ):
         src = match.group(0)
         name = match.group(1)
+
+        _LOG.info(
+            "processing SRC backtick <fg=cyan>%s</fg> in <%s %s>",
+            name,
+            node.__class__.__name__,
+            node.name,
+        )
 
         if link := self._resolve_link(node, suite, resolver, name):
             return link

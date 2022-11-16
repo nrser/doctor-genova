@@ -70,9 +70,27 @@ or to serve locally:
 
     poetry run novella --directory ./docs --serve
 
-The local server thing tries to watch and auto-update/refresh, but it doesn't
-seem to watch everything, and a lot of stuff doesn't update or breaks when it
-does decide to refresh.
+> ❗❗ WARNING ❗❗
+> 
+> The local server thing tries to watch and auto-update/refresh, but it doesn't
+> seem to watch everything, and a lot of stuff doesn't update or breaks when it
+> does decide to refresh.
+
+Another option to "watch" and re-build:
+
+1.  Install [entr](https://eradman.com/entrproject/).
+
+2.  Have `entr` watch the files and run the `novella` command:
+    
+    ```shell
+    ls doctor_genova/**/*.py docs/content/**/*.md docs/build.novella docs/mkdocs.yml | entr poetry run novella -d ./docs
+    ```
+    
+3.  In another terminal, serve the files:
+    
+    ```shell
+    python -m http.server 8080 --bind 127.0.0.1 --directory docs/_site/
+    ```
 
 License
 ------------------------------------------------------------------------------

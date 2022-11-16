@@ -11,12 +11,7 @@ from novella.markdown.preprocessor import (
     MarkdownFiles,
     MarkdownPreprocessor,
 )
-from novella.markdown.tagparser import (
-    Tag,
-    parse_block_tags,
-    parse_inline_tags,
-    replace_tags,
-)
+from novella.markdown.tagparser import Tag
 from pydoc_markdown.contrib.loaders.python import PythonLoader
 from pydoc_markdown.contrib.processors.crossref import CrossrefProcessor
 from pydoc_markdown.contrib.processors.filter import FilterProcessor
@@ -143,7 +138,7 @@ class DrGenPreprocessor(MarkdownPreprocessor):
 
         if count > 1:
             _LOG.warning(
-                "  found multiple APiObject for name <fg=cyan>%s</fg>\n\n%s",
+                "  found multiple ApiObject for name <fg=cyan>%s</fg>\n\n%s",
                 name,
                 "\n".join(repr(api_object) for api_object in api_objects),
             )
@@ -199,6 +194,7 @@ class DrGenPreprocessor(MarkdownPreprocessor):
 
     def _replace_pydoc_tag(self, file: MarkdownFile, tag: Tag) -> str | None:
         fqn = tag.args.strip()
+
         objects = self.publication_suite.resolve_fqn(fqn)
         if len(objects) > 1:
             _LOG.warning(

@@ -140,7 +140,7 @@ def mkdocs_api_nav(
 
     mkdocs_config = yaml.safe_load(mkdocs_yml_path.open("r", encoding="utf-8"))
 
-    _LOG.info("Loaded mkdocs config\n\n%s", yaml.safe_dump(mkdocs_config))
+    _LOG.debug("Loaded mkdocs config\n\n%s", yaml.safe_dump(mkdocs_config))
 
     if "nav" not in mkdocs_config:
         _LOG.warning("'nav' not found in Mkdocs config, adding")
@@ -154,7 +154,7 @@ def mkdocs_api_nav(
 
     yaml.safe_dump(mkdocs_config, mkdocs_yml_path.open("w", encoding="utf-8"))
 
-    _LOG.info("Updated mkdocs config\n\n%s", yaml.safe_dump(mkdocs_config))
+    _LOG.debug("Updated mkdocs config\n\n%s", yaml.safe_dump(mkdocs_config))
 
 
 def iter_py_files(
