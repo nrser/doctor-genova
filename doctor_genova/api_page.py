@@ -92,9 +92,10 @@ class APIPage:
     def generate(self) -> bool:
         log = self.logger().getChild("generate")
 
-        if self.path.exists():
-            log.info("Page %s exists at %s", self.module_name, self.rel_path)
-            return False
+        # TODO  Need to see if it exists at the _source_ for reruns!!!
+        # if self.path.exists():
+        #     log.info("Page %s exists at %s", self.module_name, self.rel_path)
+        #     return False
 
         self.path.parent.mkdir(parents=True, exist_ok=True)
 

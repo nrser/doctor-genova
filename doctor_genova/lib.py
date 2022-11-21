@@ -93,3 +93,11 @@ def replace_block_tags_in(
         [t for t in parse_block_tags(target.content) if t.name == tag_name],
         replace,
     )
+
+
+def is_subpath(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+    except ValueError:
+        return False
+    return True

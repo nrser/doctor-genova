@@ -32,6 +32,7 @@ from pydoc_markdown.util.docspec import ApiSuite
 from .docstring_backtick_processor import DocstringBacktickProcessor
 from .lib import (
     get_default_search_path,
+    is_subpath,
     replace_block_tags_in,
     replace_inline_tags_in,
 )
@@ -51,7 +52,9 @@ class DrGenPreprocessor(MarkdownPreprocessor):
     _loader: Loader
     _processors: list[Processor]
     _renderer: SingleObjectRenderer
-    _stdlib_resolver: StdlibResolver | None = None
+    _stdlib_resolver: Optional[StdlibResolver] = None
+    _publication_suite: Optional[ApiSuite] = None
+    _resolution_suite: Optional[ApiSuite] = None
 
     def __post_init__(self) -> None:
         self._loader = PythonLoader(search_path=get_default_search_path())
@@ -91,26 +94,97 @@ class DrGenPreprocessor(MarkdownPreprocessor):
         self._renderer.init(self.context)
         return self._renderer
 
-    @cached_property
-    def publication_modules(self) -> list[Module]:
+    @property
+    def resolution_suite(self) -> ApiSuite:
+        if self._resolution_suite is None:
+            raise AttributeError(
+                "`resolution_suite` not available; run `process_modules` first"
+            )
+        return self._resolution_suite
+
+    @property
+    def publication_suite(self) -> ApiSuite:
+        if self._publication_suite is None:
+            raise AttributeError(
+                "`publication_suite` not available; run `process_modules` first"
+            )
+        return self._publication_suite
+
+    def process_modules(self):
+        """Process the package modules (Python files). Execution sets the
+        `publication_suite` and `resolution_suite` properties, overwriting
+        them if they are already set (which is important for re-running).
+
+        A few important things to note:
+
+        1.  Processing the modules also _filters_ the list, which in turn
+            filters what is available in the `publication_suite` that ends up
+            included in the docs.
+
+            This needs to be redone when the action is rerun because the changes
+            triggering the rerun may change what api objects are included in the
+            publication suite.
+
+            An example of this is a change that adds documentation to an api
+            objects that did not have any — on the previous run it would have
+            been filtered out, but on the rerun it needs to be included.
+
+        2.  This filtering is why we have a separate `resolution_suite` to
+            resolve links against. In particular, the filtering removes the
+            indirection nodes that make indirect linking possible.
+
+            This also needs to be reloaded on rerun because new api objects
+            could be introduced.
+        """
+        # WARNING   Needs to be _before_ the processing loop!
+        #
+        # WARNING   Not sure why, but this needs to be a separate load from the
+        #           loader; loading once and copying the list doesn't work for
+        #           whatever reason I haven't looked into.
+        self._resolution_suite = ApiSuite(list(self.loader.load()))
+
+        # Load a list
         modules = list(self.loader.load())
+
+        # Figure out what directories to watch
+
+        # Get a set of all source files from the `Module` that were loaded
+        module_dirs = {
+            Path(module.location.filename).resolve().parent
+            for module in modules
+        }
+
+        # The directories we want to watch are the roots — those which are _not_
+        # subpaths of any of the _other_ ones.
+        watch_dirs = [
+            watch_dir
+            for watch_dir in module_dirs
+            if not any(
+                is_subpath(watch_dir, module_dir)
+                for module_dir in module_dirs
+                if module_dir != watch_dir
+            )
+        ]
+
+        # Tell the build context to watch those directories too! It keeps a set
+        # if watched paths that it checks before adding, so this is idempotent.
+        for watch_dir in watch_dirs:
+            self.action._build.watch(watch_dir)
+
+        # Process the modules and set the suite
+
         for processor in self._processors:
             processor.process(modules, self)
-        return modules
 
-    @cached_property
-    def publication_suite(self) -> ApiSuite:
-        return ApiSuite(self.publication_modules)
-
-    @cached_property
-    def resolution_suite(self) -> ApiSuite:
-        return ApiSuite(list(self.loader.load()))
+        self._publication_suite = ApiSuite(modules)
 
     def setup(self) -> None:
         if self.dependencies is None and self.predecessors is None:
             self.precedes("anchor")
 
     def process_files(self, files: MarkdownFiles) -> None:
+        self.process_modules()
+
         for file in files:
             replace_block_tags_in(
                 file,
@@ -211,14 +285,6 @@ class DrGenPreprocessor(MarkdownPreprocessor):
         return self.action.repeat(file.path, file.output_path, fp.getvalue())
 
     def _replace_pylink_tag(self, tag: Tag) -> str | None:
-        """
-        Override `PydocTagPreprocessor._replace_pylink_tag` to check if the
-        link content is a Python stdlib path, and use that if so.
-
-        This is not ideal, because it actually allows stdlib to shaddow the
-        package in case of conflict, which is probably backwards of what you
-        would expect, but it's simple as an initial version.
-        """
         name = tag.args.strip()
 
         _LOG.info("processing @pylink tag <fg=cyan>%s</fg>", name)

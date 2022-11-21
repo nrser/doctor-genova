@@ -6,6 +6,13 @@ authors = ["nrser <neil@neilsouza.com>"]
 license = "BSD-3-Clause"
 readme = "README.md"
 packages = [{include = "doctor_genova"}]
+include = [
+  "LICENSE"
+]
+
+[tool.poetry.urls]
+Homepage = "https://github.com/nrser/doctor-genova"
+Repository = "https://github.com/nrser/doctor-genova"
 
 [tool.poetry.dependencies]
 python = "^3.8"
