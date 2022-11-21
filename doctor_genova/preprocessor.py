@@ -6,12 +6,15 @@ from typing import Optional
 import io
 
 from docspec import ApiObject, Indirection, Module
+
 from novella.markdown.preprocessor import (
     MarkdownFile,
     MarkdownFiles,
     MarkdownPreprocessor,
 )
 from novella.markdown.tagparser import Tag
+from novella.build import BuildContext
+
 from pydoc_markdown.contrib.loaders.python import PythonLoader
 from pydoc_markdown.contrib.processors.crossref import CrossrefProcessor
 from pydoc_markdown.contrib.processors.filter import FilterProcessor
@@ -110,7 +113,7 @@ class DrGenPreprocessor(MarkdownPreprocessor):
             )
         return self._publication_suite
 
-    def process_modules(self):
+    def process_modules(self, build: BuildContext):
         """Process the package modules (Python files). Execution sets the
         `publication_suite` and `resolution_suite` properties, overwriting
         them if they are already set (which is important for re-running).
@@ -169,7 +172,7 @@ class DrGenPreprocessor(MarkdownPreprocessor):
         # Tell the build context to watch those directories too! It keeps a set
         # if watched paths that it checks before adding, so this is idempotent.
         for watch_dir in watch_dirs:
-            self.action._build.watch(watch_dir)
+            build.watch(watch_dir)
 
         # Process the modules and set the suite
 
@@ -183,7 +186,7 @@ class DrGenPreprocessor(MarkdownPreprocessor):
             self.precedes("anchor")
 
     def process_files(self, files: MarkdownFiles) -> None:
-        self.process_modules()
+        self.process_modules(files.build)
 
         for file in files:
             replace_block_tags_in(
