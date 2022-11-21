@@ -80,7 +80,7 @@ class DrGenPreprocessor(MarkdownPreprocessor):
             source_linker=autodetect_source_linker(),
             render_novella_anchors=True,
             render_module_header=False,
-            descriptive_class_title="Class ",
+            descriptive_class_title=False,
         )
 
     @cached_property

@@ -7,9 +7,10 @@ import logging
 import sys
 from typing import IO, Optional
 
-from .nav import dig_nav
-
 import yaml
+from novella.build import NovellaBuilder
+
+from .nav import dig_nav
 
 _LOG = logging.getLogger(__name__)
 
@@ -24,6 +25,7 @@ class APIPage:
 
     module_rel_path: Path
     build_dir: Path
+    docs_dir: Path
 
     @cached_property
     def is_init(self) -> bool:
@@ -58,23 +60,44 @@ class APIPage:
         return self.name
 
     @cached_property
-    def content_dir(self) -> Path:
+    def build_content_dir(self) -> Path:
         return self.build_dir / "content"
 
     @cached_property
-    def path(self) -> Path:
-        as_dir = self.content_dir / self.module_rel_path.parent / self.name
+    def docs_content_dir(self) -> Path:
+        return self.docs_dir / "content"
+
+    @cached_property
+    def build_path(self) -> Path:
+        as_dir = (
+            self.build_content_dir / self.module_rel_path.parent / self.name
+        )
 
         if as_dir.exists():
             return as_dir / "index.md"
 
         return (
-            self.content_dir / self.module_rel_path.parent / (self.name + ".md")
+            self.build_content_dir
+            / self.module_rel_path.parent
+            / (self.name + ".md")
+        )
+
+    @cached_property
+    def docs_path(self) -> Path:
+        as_dir = self.docs_content_dir / self.module_rel_path.parent / self.name
+
+        if as_dir.exists():
+            return as_dir / "index.md"
+
+        return (
+            self.docs_content_dir
+            / self.module_rel_path.parent
+            / (self.name + ".md")
         )
 
     @cached_property
     def rel_path(self) -> Path:
-        return self.path.relative_to(self.content_dir)
+        return self.docs_path.relative_to(self.docs_content_dir)
 
     def print_stub(self, file: IO[str] = sys.stdout) -> None:
         print("---", file=file)
@@ -92,14 +115,13 @@ class APIPage:
     def generate(self) -> bool:
         log = self.logger().getChild("generate")
 
-        # TODO  Need to see if it exists at the _source_ for reruns!!!
-        # if self.path.exists():
-        #     log.info("Page %s exists at %s", self.module_name, self.rel_path)
-        #     return False
+        if self.docs_path.exists():
+            log.info("Page %s exists at %s", self.module_name, self.docs_path)
+            return False
 
-        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.build_path.parent.mkdir(parents=True, exist_ok=True)
 
-        with self.path.open("w", encoding="utf-8") as file:
+        with self.build_path.open("w", encoding="utf-8") as file:
             self.print_stub(file)
 
         log.info("Generated %s page at %s", self.module_name, self.rel_path)

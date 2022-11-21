@@ -7,6 +7,7 @@ from typing import Generator, Iterable, Optional
 
 import docspec_python
 import yaml
+from novella.build import NovellaBuilder
 
 from doctor_genova.api_page import APIPage
 from doctor_genova.nav import ensure_child_nav, sort_nav
@@ -35,11 +36,17 @@ DEFAULT_API_SECTION = "API Documentation"
 DEFAULT_IGNORE_WHEN_DISCOVERED = ("test", "tests", "setup")
 
 
+def blah(arg):
+    _LOG.info("HERE: %r", arg)
+    raise Exception("FUCK")
+
+
 def generate_api_pages(
-    build_dir: Path,
+    builder: NovellaBuilder,
     search_path: Optional[Iterable[PathLike]] = None,
     ignore_when_discovered: Container[str] = DEFAULT_IGNORE_WHEN_DISCOVERED,
     nav_api_section: str = DEFAULT_API_SECTION,
+    docs_dir: Optional[Path] = None,
 ) -> None:
     """Generate Markdown stub pages for each module found in the _search path_,
     if such a page does not already exist.
@@ -79,14 +86,23 @@ def generate_api_pages(
 
     """
 
-    with mkdocs_api_nav(build_dir, nav_api_section) as api_nav:
+    if docs_dir is None:
+        docs_dir = Path.cwd()
+
+    with mkdocs_api_nav(builder.directory, nav_api_section) as api_nav:
         py_files = iter_py_files(
             search_path=search_path,
             ignore_when_discovered=ignore_when_discovered,
         )
 
         pages = [
-            APIPage(module_rel_path, build_dir) for module_rel_path in py_files
+            APIPage(
+                module_rel_path=module_rel_path,
+                build_dir=builder.directory,
+                # TODO  Is there a better way to get this?
+                docs_dir=builder._context.project_directory,
+            )
+            for module_rel_path in py_files
         ]
 
         for page in pages:
