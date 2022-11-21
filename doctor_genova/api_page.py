@@ -69,18 +69,7 @@ class APIPage:
 
     @cached_property
     def build_path(self) -> Path:
-        as_dir = (
-            self.build_content_dir / self.module_rel_path.parent / self.name
-        )
-
-        if as_dir.exists():
-            return as_dir / "index.md"
-
-        return (
-            self.build_content_dir
-            / self.module_rel_path.parent
-            / (self.name + ".md")
-        )
+        return self.build_content_dir / self.rel_path
 
     @cached_property
     def docs_path(self) -> Path:
