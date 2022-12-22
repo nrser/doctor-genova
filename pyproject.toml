@@ -5,7 +5,9 @@ description = "Generate and link API docs with pydoc-markdown (novella backend)"
 authors = ["nrser <neil@neilsouza.com>"]
 license = "BSD-3-Clause"
 readme = "README.md"
-packages = [{include = "doctor_genova"}]
+packages = [
+  {include = "doctor_genova"},
+]
 include = [
   "LICENSE"
 ]
@@ -26,6 +28,9 @@ novella = "0.2.3"
 [tool.poetry.group.dev.dependencies]
 pytest = "^5.2"
 black = "^22.3.0"
+
+[tool.poetry.plugins."novella.templates"]
+dr_gen_mkdocs = "doctor_genova.templates:DrGenMkdocsTemplate"
 
 [build-system]
 requires = ["poetry-core"]
