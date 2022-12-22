@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Any, cast
 
 from novella.templates.mkdocs import MkdocsTemplate, MkdocsUpdateConfigAction
@@ -22,9 +23,15 @@ class DrGenMkdocsTemplate(MkdocsTemplate):
     get at the section where the adding of additional arguments happens. I'm
     sure that fragile approach will snap at some point down the road, but for
     the moment (2022-12-21) it works.
+
+    However, this class does allow subclasses to add additional pass-through
+    options without re-implementing again by overriding the `configure_options`
+    and `configure_run` methods.
     """
 
-    def define_pipeline(self, context: NovellaContext) -> None:
+    def configure_options(self, context: NovellaContext) -> None:
+        # The ones configured in `MkdocsTemplate`
+
         context.option("serve", description="Use mkdocs serve", flag=True)
         context.option(
             "site-dir",
@@ -40,6 +47,9 @@ class DrGenMkdocsTemplate(MkdocsTemplate):
             ),
             metavar="URL",
         )
+
+        # Additions
+
         context.option(
             "dev-addr",
             description=(
@@ -48,6 +58,23 @@ class DrGenMkdocsTemplate(MkdocsTemplate):
             ),
             metavar="DEV_ADDR",
         )
+
+    def configure_run(self, context: NovellaContext, run: RunAction) -> None:
+        run.args = ["mkdocs"]
+        if context.options["serve"]:
+            run.supports_reloading = True
+            run.args += ["serve"]
+            if dev_addr := context.options.get("dev-addr"):
+                run.args += ["--dev-addr", dev_addr]
+        else:
+            run.args += [
+                "build",
+                "-d",
+                context.project_directory / str(context.options["site-dir"]),
+            ]
+
+    def define_pipeline(self, context: NovellaContext) -> None:
+        self.configure_options(context)
 
         copy_files = cast(
             CopyFilesAction, context.do("copy-files", name="copy-files")
@@ -81,19 +108,6 @@ class DrGenMkdocsTemplate(MkdocsTemplate):
             )
         )
 
-        def configure_run(run: RunAction) -> None:
-            run.args = ["mkdocs"]
-            if context.options["serve"]:
-                run.supports_reloading = True
-                run.args += ["serve"]
-                if dev_addr := context.options.get("dev-addr"):
-                    run.args += ["--dev-addr", dev_addr]
-            else:
-                run.args += [
-                    "build",
-                    "-d",
-                    context.project_directory
-                    / str(context.options["site-dir"]),
-                ]
-
-        context.do("run", configure_run, name="mkdocs-run")
+        context.do(
+            "run", partial(self.configure_run, context), name="mkdocs-run"
+        )
