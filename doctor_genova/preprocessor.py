@@ -1,6 +1,7 @@
+from collections import defaultdict
 import logging
 import re
-from functools import cached_property
+from functools import cached_property, partial
 from pathlib import Path
 from typing import Optional
 import io
@@ -27,7 +28,8 @@ from pydoc_markdown.interfaces import (
     Context,
     Loader,
     Processor,
-    SingleObjectRenderer,
+    Resolver,
+    ResolverV2,
 )
 from pydoc_markdown.novella.preprocessor import autodetect_source_linker
 from pydoc_markdown.util.docspec import ApiSuite
@@ -44,7 +46,7 @@ from .stdlib_resolver import StdlibResolver
 _LOG = logging.getLogger(__name__)
 
 
-class DrGenPreprocessor(MarkdownPreprocessor):
+class DrGenPreprocessor(MarkdownPreprocessor, Resolver):
     """Replaces simple backtick spans with links when they seem to point to:
 
     1.  Another object in the documented package.
@@ -54,24 +56,28 @@ class DrGenPreprocessor(MarkdownPreprocessor):
 
     _loader: Loader
     _processors: list[Processor]
-    _renderer: SingleObjectRenderer
-    _stdlib_resolver: Optional[StdlibResolver] = None
+    _renderer: MarkdownRenderer
+    _stdlib_resolver: StdlibResolver
     _publication_suite: Optional[ApiSuite] = None
     _resolution_suite: Optional[ApiSuite] = None
+    _scope_api_objects: dict[Path, dict[str, ApiObject]]
+    _resolver_v2: ResolverV2
 
     def __post_init__(self) -> None:
+        self._scope_api_objects = defaultdict(dict)
+
         self._loader = PythonLoader(search_path=get_default_search_path())
 
-        resolver_v2 = MarkdownReferenceResolver(global_=True)
+        self._resolver_v2 = MarkdownReferenceResolver(global_=True)
         self._stdlib_resolver = StdlibResolver()
 
         self._processors = [
             FilterProcessor(),
             SmartProcessor(),
             # We return the entire link formatted as a Novella {@link} tag in #resolve_ref().
-            CrossrefProcessor(resolver_v2=resolver_v2),
+            CrossrefProcessor(resolver_v2=self._resolver_v2),
             DocstringBacktickProcessor(
-                resolver_v2=resolver_v2,
+                resolver_v2=self._resolver_v2,
                 stdlib_resolver=self._stdlib_resolver,
             ),
         ]
@@ -181,6 +187,9 @@ class DrGenPreprocessor(MarkdownPreprocessor):
 
         self._publication_suite = ApiSuite(modules)
 
+    def resolve_ref(self, scope: ApiObject, ref: str) -> None | str:
+        return self._resolve_link(None, ref)
+
     def setup(self) -> None:
         if self.dependencies is None and self.predecessors is None:
             self.precedes("anchor")
@@ -195,20 +204,43 @@ class DrGenPreprocessor(MarkdownPreprocessor):
                 lambda tag: self._replace_pydoc_tag(file, tag),
             )
 
-            replace_inline_tags_in(file, "pylink", self._replace_pylink_tag)
+            replace_block_tags_in(
+                file, "pyscope", partial(self._replace_pyscope_tag, file)
+            )
+
+            replace_inline_tags_in(
+                file,
+                "pylink",
+                partial(self._replace_pylink_tag, file),
+            )
 
             self._replace_backticks(file)
 
     def _replace_backticks(self, file: MarkdownFile) -> None:
         file.content = DocstringBacktickProcessor.BACKTICK_RE.sub(
-            self._replace_backticks_handler,
+            partial(self._replace_backticks_handler, file),
             file.content,
         )
 
-    def _resolve_api_object(self, name: str) -> Optional[ApiObject]:
+    def _resolve_api_object(
+        self, file: None | MarkdownFile, name: str
+    ) -> None | ApiObject:
         api_objects = self.resolution_suite.resolve_fqn(name)
 
         count = len(api_objects)
+
+        if count == 0 and file is not None:
+            for node in self._scope_api_objects[file.path.absolute()].values():
+                _LOG.info("resolving %s against reference %s", name, node.name)
+
+                if (
+                    api_object := self._resolver_v2.resolve_reference(
+                        self.resolution_suite, node, name
+                    )
+                ) and api_object.parent is node:
+                    api_objects.append(api_object)
+
+            count = len(api_objects)
 
         if count == 0:
             return None
@@ -222,15 +254,15 @@ class DrGenPreprocessor(MarkdownPreprocessor):
 
         return api_objects[0]
 
-    def _resolve_link(self, name: str) -> Optional[str]:
-        if api_object := self._resolve_api_object(name):
+    def _resolve_link(self, file: None | MarkdownFile, name: str) -> None | str:
+        if api_object := self._resolve_api_object(file, name):
             if isinstance(api_object, Indirection):
                 _LOG.info(
                     "  <fg=yellow>INDIRECTION</fg> <fg=cyan>%s</fg> -> <fg=yellow>%s</fg>",
                     name,
                     api_object.target,
                 )
-                return self._resolve_link(api_object.target)
+                return self._resolve_link(file, api_object.target)
 
             else:
                 link = "{{@link pydoc:{}}}".format(
@@ -258,13 +290,15 @@ class DrGenPreprocessor(MarkdownPreprocessor):
                 _LOG.info("  <fg=red>NO MATCH</fg>")
                 return None
 
-    def _replace_backticks_handler(self, match: re.Match) -> str:
+    def _replace_backticks_handler(
+        self, file: MarkdownFile, match: re.Match
+    ) -> str:
         src = match.group(0)
         fqn = match.group(1)
 
         _LOG.info("processing MD backtick <fg=cyan>%s</fg>", src)
 
-        if link := self._resolve_link(fqn):
+        if link := self._resolve_link(file, fqn):
             return link
         else:
             return src
@@ -287,12 +321,41 @@ class DrGenPreprocessor(MarkdownPreprocessor):
         self.renderer.render_object(fp, objects[0], tag.options)
         return self.action.repeat(file.path, file.output_path, fp.getvalue())
 
-    def _replace_pylink_tag(self, tag: Tag) -> str | None:
+    def _replace_pylink_tag(self, file: MarkdownFile, tag: Tag) -> str | None:
         name = tag.args.strip()
 
         _LOG.info("processing @pylink tag <fg=cyan>%s</fg>", name)
 
-        if link := self._resolve_link(name):
+        if link := self._resolve_link(file, name):
             return link
 
         return f"`{name}`"
+
+    def _replace_pyscope_tag(self, file: MarkdownFile, tag: Tag) -> str:
+        name = tag.args.strip()
+
+        _LOG.info("processing @pyscope tag <fg=cyan>%s</fg>", name)
+
+        api_objects = self.resolution_suite.resolve_fqn(name)
+
+        if len(api_objects) == 0:
+            _LOG.warning(
+                "found no api objects for @pyscope tag <fg=cyan>%s</fg>", name
+            )
+        else:
+            _LOG.info(
+                "adding reference api objects for @pyscope tag <fg=cyan>%s</fg>: %s",
+                name,
+                ", ".join(
+                    f"{obj.__class__.__name__}:{obj.name}"
+                    for obj in api_objects
+                ),
+            )
+
+        for api_object in api_objects:
+            self._scope_api_objects[file.path.absolute()][
+                api_object.name
+            ] = api_object
+
+        # Replace the tag with nothing
+        return ""

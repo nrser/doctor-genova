@@ -143,6 +143,17 @@ class StdlibResolver:
             return None
 
     @staticmethod
+    def need_spec(name: str) -> ModuleSpec:
+        spec = find_spec(name)
+
+        if spec is None:
+            raise ModuleNotFoundError(
+                f"Failed to find spec for module {name!r}"
+            )
+
+        return spec
+
+    @staticmethod
     def module_has_member(
         module: ModuleType, member_path: Iterable[str]
     ) -> bool:
@@ -157,7 +168,7 @@ class StdlibResolver:
     @staticmethod
     def get_module_member(
         module: ModuleType, member_path: Iterable[str]
-    ) -> bool:
+    ) -> Any:
         target = module
         for name in member_path:
             if hasattr(target, name):
@@ -174,7 +185,12 @@ class StdlibResolver:
             return sys.modules[spec.name]
 
         module = module_from_spec(spec)
-        spec.loader.exec_module(module)
+
+        if loader := spec.loader:
+            loader.exec_module(module)
+        else:
+            raise AttributeError(f"ModuleSpec {spec} has no loader")
+
         sys.modules[spec.name] = module
         return module
 
@@ -184,9 +200,9 @@ class StdlibResolver:
     _builtin_members: dict[str, Any]
 
     def __init__(self):
-        self._stdlib_path = Path(find_spec("logging").origin).parents[1]
+        self._stdlib_path = Path(logging.__file__).parents[1]
 
-        self._builtin_spec = find_spec(str.__module__)
+        self._builtin_spec = self.need_spec(str.__module__)
         self._builtin_module = module_from_spec(self._builtin_spec)
         self._builtin_members = dict(getmembers(self._builtin_module))
 

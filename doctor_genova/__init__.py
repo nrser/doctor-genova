@@ -36,14 +36,9 @@ DEFAULT_API_SECTION = "API Documentation"
 DEFAULT_IGNORE_WHEN_DISCOVERED = ("test", "tests", "setup")
 
 
-def blah(arg):
-    _LOG.info("HERE: %r", arg)
-    raise Exception("FUCK")
-
-
 def generate_api_pages(
     builder: NovellaBuilder,
-    search_path: Optional[Iterable[PathLike]] = None,
+    search_path: Optional[Iterable[str]] = None,
     ignore_when_discovered: Container[str] = DEFAULT_IGNORE_WHEN_DISCOVERED,
     nav_api_section: str = DEFAULT_API_SECTION,
     docs_dir: Optional[Path] = None,
@@ -175,7 +170,7 @@ def mkdocs_api_nav(
 
 def iter_py_files(
     *,
-    search_path: Optional[Iterable[PathLike[str]]] = None,
+    search_path: Optional[Iterable[str]] = None,
     ignore_when_discovered: Container[str] = DEFAULT_IGNORE_WHEN_DISCOVERED,
 ) -> Generator[Path, None, None]:
     """

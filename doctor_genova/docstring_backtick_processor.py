@@ -60,7 +60,7 @@ class DocstringBacktickProcessor(Processor):
         suite: ApiSuite,
         resolver: Optional[Resolver],
         name: str,
-    ):
+    ) -> None | str:
         if api_object := self.resolver_v2.resolve_reference(suite, node, name):
             link = "{{@link pydoc:{}}}".format(
                 ".".join(x.name for x in api_object.path)
@@ -74,7 +74,7 @@ class DocstringBacktickProcessor(Processor):
 
             return link
 
-        if link := resolver._resolve_link(name):
+        if resolver is not None and (link := resolver.resolve_ref(node, name)):
             return link
 
         return None
