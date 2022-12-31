@@ -336,7 +336,7 @@ class DrGenPreprocessor(MarkdownPreprocessor, Resolver):
 
         _LOG.info("processing @pyscope tag <fg=cyan>%s</fg>", name)
 
-        api_objects = self.resolution_suite.resolve_fqn(name)
+        api_objects = self.publication_suite.resolve_fqn(name)
 
         if len(api_objects) == 0:
             _LOG.warning(
