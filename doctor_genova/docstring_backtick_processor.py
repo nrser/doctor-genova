@@ -22,7 +22,6 @@ class DocstringBacktickProcessor(Processor):
     )
 
     resolver_v2: ResolverV2
-    stdlib_resolver: StdlibResolver
 
     def process(
         self, modules: list[Module], resolver: Optional[Resolver]

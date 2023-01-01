@@ -9,6 +9,8 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Iterable, Optional, Sequence, Union
 
+from .external_resolver import ExternalResolution
+
 _LOG = logging.getLogger(__name__)
 
 
@@ -120,10 +122,10 @@ class StdlibResolver:
     @dataclass(frozen=True)
     class Resolution:
         name: str
+        url: str
         module_spec: ModuleSpec
         module: ModuleType
         member_path: list[str]
-        url: str
 
         @cached_property
         def target(self) -> Any:
@@ -131,8 +133,13 @@ class StdlibResolver:
                 self.module, self.member_path
             )
 
-        @cached_property
-        def md_link(self) -> str:
+        def get_name(self) -> str:
+            return self.name
+
+        def get_url(self) -> str:
+            return self.url
+
+        def get_md_link(self) -> str:
             return "[{}]({})".format(self.name, self.url)
 
     @staticmethod
@@ -275,7 +282,7 @@ class StdlibResolver:
 
         return self.build_url("functions.html", name)
 
-    def resolve_name(self, name: str) -> Optional[Resolution]:
+    def resolve_name(self, name: str) -> None | ExternalResolution:
         """
         This is the meat of the whole thing, and probably the only method you'll
         really need to use.

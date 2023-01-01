@@ -3,7 +3,7 @@ import logging
 import re
 from functools import cached_property, partial
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, Optional
 import io
 
 from docspec import ApiObject, Indirection, Module
@@ -12,6 +12,7 @@ from novella.markdown.preprocessor import (
     MarkdownFile,
     MarkdownFiles,
     MarkdownPreprocessor,
+    MarkdownPreprocessorAction,
 )
 from novella.markdown.tagparser import Tag
 from novella.build import BuildContext
@@ -42,6 +43,7 @@ from .lib import (
     replace_inline_tags_in,
 )
 from .stdlib_resolver import StdlibResolver
+from .external_resolver import ExternalResolver
 
 _LOG = logging.getLogger(__name__)
 
@@ -57,29 +59,34 @@ class DrGenPreprocessor(MarkdownPreprocessor, Resolver):
     _loader: Loader
     _processors: list[Processor]
     _renderer: MarkdownRenderer
-    _stdlib_resolver: StdlibResolver
     _publication_suite: Optional[ApiSuite] = None
     _resolution_suite: Optional[ApiSuite] = None
     _scope_api_objects: dict[Path, dict[str, ApiObject]]
     _resolver_v2: ResolverV2
+    _external_resolvers: tuple[ExternalResolver, ...]
 
-    def __post_init__(self) -> None:
+    def __init__(
+        self,
+        action: MarkdownPreprocessorAction,
+        name: str,
+        external_resolvers: Iterable[ExternalResolver] = (),
+    ) -> None:
+        super().__init__(action, name)
+
         self._scope_api_objects = defaultdict(dict)
 
         self._loader = PythonLoader(search_path=get_default_search_path())
 
         self._resolver_v2 = MarkdownReferenceResolver(global_=True)
-        self._stdlib_resolver = StdlibResolver()
+
+        self._external_resolvers = (StdlibResolver(), *external_resolvers)
 
         self._processors = [
             FilterProcessor(),
             SmartProcessor(),
             # We return the entire link formatted as a Novella {@link} tag in #resolve_ref().
             CrossrefProcessor(resolver_v2=self._resolver_v2),
-            DocstringBacktickProcessor(
-                resolver_v2=self._resolver_v2,
-                stdlib_resolver=self._stdlib_resolver,
-            ),
+            DocstringBacktickProcessor(resolver_v2=self._resolver_v2),
         ]
 
         self._renderer = MarkdownRenderer(
@@ -277,18 +284,21 @@ class DrGenPreprocessor(MarkdownPreprocessor, Resolver):
 
                 return link
 
-        else:
-            if resolution := self._stdlib_resolver.resolve_name(name):
-                _LOG.info(
-                    "  <fg=magenta>STDLIB</fg> <fg=cyan>%s</fg> -> <fg=magenta>%s</fg>",
-                    name,
-                    resolution.md_link,
-                )
-                return resolution.md_link
+        for external_resolver in self._external_resolvers:
+            if resolution := external_resolver.resolve_name(name):
+                md_link = resolution.get_md_link()
 
-            else:
-                _LOG.info("  <fg=red>NO MATCH</fg>")
-                return None
+                _LOG.info(
+                    "  <fg=magenta>%s</fg> <fg=cyan>%s</fg> -> <fg=magenta>%s</fg>",
+                    external_resolver.__class__.__name__,
+                    name,
+                    md_link,
+                )
+
+                return md_link
+
+        _LOG.info("  <fg=red>NO MATCH</fg>")
+        return None
 
     def _replace_backticks_handler(
         self, file: MarkdownFile, match: re.Match
