@@ -25,9 +25,16 @@ mkdocs-material = "^8.5.8"
 pydoc-markdown = "4.6.3"
 novella = "0.2.3"
 
+# Use a custom branch that has support for Python 3.10+ pattern matching syntax,
+# as well as namespace packages
+[tool.poetry.dependencies.docspec-python]
+git = "https://github.com/nrser/docspec.git"
+branch = "namespace-packages"
+subdirectory = "docspec-python"
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^5.2"
-black = "^22.3.0"
+black = "^23.1.0"
 
 [tool.poetry.plugins."novella.templates"]
 dr_gen_mkdocs = "doctor_genova.templates:DrGenMkdocsTemplate"
