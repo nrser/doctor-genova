@@ -5,6 +5,8 @@ on: push
 jobs:
   build:
     name: Build distribution 📦
+    # only build if we're going to publish
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
 
     steps:
