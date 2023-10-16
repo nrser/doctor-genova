@@ -39,6 +39,7 @@ class DrGenMkdocsTemplate(MkdocsTemplate):
             default="_site",
             metavar="PATH",
         )
+
         context.option(
             "base-url",
             description=(
@@ -59,8 +60,21 @@ class DrGenMkdocsTemplate(MkdocsTemplate):
             metavar="DEV_ADDR",
         )
 
+        context.option(
+            "site-url",
+            description="""
+                Set the canonical URL of the site by setting `site_url` in the
+                mkdocs configuration.
+
+                See https://www.mkdocs.org/user-guide/configuration/#site_url
+
+                Example: http://nrser.com/splatlog
+            """
+        )
+
     def configure_run(self, context: NovellaContext, run: RunAction) -> None:
         run.args = ["mkdocs"]
+
         if context.options["serve"]:
             run.supports_reloading = True
             run.args += ["serve"]
@@ -107,6 +121,12 @@ class DrGenMkdocsTemplate(MkdocsTemplate):
                 "anchor", cast(Any, configure_anchor)
             )
         )
+
+        def set_site_url():
+            if site_url:= context.options.get("site-url"):
+                update_config.update("$.site_url", set=site_url)
+
+        context.delay(set_site_url)
 
         context.do(
             "run", partial(self.configure_run, context), name="mkdocs-run"
